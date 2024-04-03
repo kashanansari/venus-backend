@@ -15,6 +15,16 @@ return new class extends Migration
     {
         Schema::create('investments', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->unsignedBigInteger('property_id');
+            $table->foreign('property_id')->references('id')->on('poperties'); 
+            $table->string('wallet_address')->nullable();
+            $table->string('invested_amount')->nullable();
+            $table->string('invested_date')->nullable();
+            $table->string('invested_time')->nullable();
+            $table->string('status')->nullable();
+ 
             $table->timestamps();
         });
     }

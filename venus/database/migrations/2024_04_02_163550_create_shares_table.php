@@ -15,6 +15,14 @@ return new class extends Migration
     {
         Schema::create('shares', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->string('quantity')->nullable();
+            $table->string('price')->nullable();
+            $table->string('type')->nullable();
+            $table->string('status')->nullable();
+            $table->string('date')->nullable();
+            $table->string('time')->nullable();
             $table->timestamps();
         });
     }
