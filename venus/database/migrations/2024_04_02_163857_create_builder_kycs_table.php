@@ -31,7 +31,7 @@ return new class extends Migration
             $table->string('country')->nullable();
             $table->string('additional_info')->nullable();
             $table->string('occupation')->nullable();
-            $table->string('source of_funds')->nullable();
+            $table->string('source_of_funds')->nullable();
             $table->string('status')->nullable();
             $table->string('date')->nullable();
             $table->string('time')->nullable();

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('users');
             $table->string('date_of_birth')->nullable();
             $table->string('cnic')->nullable();
-            $table->string('licenese')->nullable();
+            $table->string('license')->nullable();
             $table->string('passport')->nullable();
             $table->string('yearly_tax_report')->nullable();
             $table->string('nationality')->nullable();
@@ -31,7 +31,7 @@ return new class extends Migration
             $table->string('country')->nullable();
             $table->string('additional_info')->nullable();
             $table->string('occupation')->nullable();
-            $table->string('source of_funds')->nullable();
+            $table->string('source_of_funds')->nullable();
             $table->string('status')->nullable();
             $table->string('date')->nullable();
             $table->string('time')->nullable();

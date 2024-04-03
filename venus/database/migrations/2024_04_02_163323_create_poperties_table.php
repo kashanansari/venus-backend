@@ -20,7 +20,7 @@ return new class extends Migration
             $table->json('images')->nullable();
             $table->string('property_name')->nullable();
             $table->enum('property_type', ['Rental', 'Land'])->nullable();
-            $table->string('property size')->nullable();
+            $table->string('property_size')->nullable();
             $table->string('rental_price')->nullable();
             $table->enum('rental_frequency', ['Monthly', 'Annual'])->nullable();
             $table->string('no_of_bedrooms')->nullable();
@@ -33,7 +33,7 @@ return new class extends Migration
             $table->string('govt_assessed_land')->nullable();
             $table->string('attachment')->nullable()->change();
             $table->string('cap')->nullable();
-            $table->string('annual_recurring avenue')->nullable();
+            $table->string('annual_recurring_avenue')->nullable();
             $table->string('dividend')->nullable();
             $table->string('declaration')->nullable();
             $table->string('buider_wallet_address')->nullable();
