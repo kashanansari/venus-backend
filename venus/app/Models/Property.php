@@ -4,11 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 
 class Property extends Model
 {
+    use SoftDeletes;
+
     use HasFactory;
-    protected $table='poperties';
+    protected $table='properties';
     protected $fillable=[
         'user_id',
         'images',
@@ -37,4 +41,8 @@ class Property extends Model
         'status'
 
     ];
+    public function scopeActive($query)
+    {
+        return $query->whereNull('deleted_at');
+    }
 }
