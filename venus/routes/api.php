@@ -24,6 +24,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('create_user_kyc',[usercontroller::class,'create_user_kyc'])->name('create_user_kyc');
 Route::put('kyc_accept',[usercontroller::class,'kyc_accept'])->name('kyc_accept');
 Route::put('kyc_reject',[usercontroller::class,'kyc_reject'])->name('kyc_reject');
+Route::post('create_user_vote',[usercontroller::class,'create_user_vote'])->name('create_user_vote');
 //builder
 
 Route::post('create_builder_kyc',[buildercontroller::class,'create_builder_kyc'])->name('create_builder_kyc');
@@ -43,8 +44,9 @@ Route::get('get_voting_poll',[admincontroller::class,'get_voting_poll'])->name('
 Route::put('update_votes',[admincontroller::class,'update_votes'])->name('update_votes');
 Route::delete('/{vote_id}',[admincontroller::class,'delete_votes'])->name('delete_votes');
 Route::post('/create_news',[admincontroller::class,'create_news'])->name('create_news');
-Route::get('/get_news',[admincontroller::class,'get_news'])->name('get_news');
-Route::put('/update_news',[admincontroller::class,'update_news'])->name('update_news');
+Route::get('/allnews',[admincontroller::class,'allnews'])->name('allnews');
+Route::post('/update_news',[admincontroller::class,'update_news'])->name('update_news');
+Route::delete('/delete_news/{news_id}',[admincontroller::class,'delete_news'])->name('delete_news');
 
 
 Route::get('time',[usercontroller::class,'time'])->name('time');

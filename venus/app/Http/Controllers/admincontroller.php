@@ -485,21 +485,30 @@ public function create_news(Request $request){
         ], 500);
     }
 }
-public function get_news(Request $request){
-    $news=News::active()->get();
-    if($news){
+public function allnews(Request $request){
+    $news=News::active()
+    ->orderBy('created_at','desc')
+    ->get();
+    if(!$news->isEmpty()){
         return response()->json([
             'success' => true,
             'message' => 'News found successfully',
             'data' => $news
         ], 500);
     }
+    else{
+        return response()->json([
+            'success' => false,
+            'message' => 'News not found',
+            'data' => null
+        ], 400);
+    }
 }
 
 public function update_news(Request $request){
-
     $validator = Validator::make($request->all(), [
         'news_id' => 'required|exists:news,id',
+        'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:4048', // Validate image file
     ]);
 
     if($validator->fails()) {
@@ -508,39 +517,62 @@ public function update_news(Request $request){
             'message' => $validator->errors(),
         ], 402);
     }
-    $news=News::where('id',$request->news_id)
-    ->first();
+
+    $news = News::find($request->news_id);
+
+    if(!$news) {
+        return response()->json([
+            'success' => false,
+            'message' => 'News not found',
+        ], 404);
+    }
+
     Db::beginTransaction();
-    try{
+
+    try {
         $imagePath = $request->file('image')->store('images', 'public');
-    if($news){
-        $news->title =$request->title ;
-        $news->description=$request->description;
-        $news->image=$imagePath;
-        $news->date=$request->date;
-        $news->end_date=$request->end_date;
-        $news->polling_option=$request->polling_option;
-        $news->date=formatDate();
-        $news->time=formatTime();
-        $news->status="active";
-        $news->update();
+
+        $news->title = $request->title;
+        $news->description = $request->description;
+        $news->image = $imagePath;
+        $news->date = formatDate();
+        $news->time = formatTime();
+        $news->status = "active";
+        $news->save();
+
         Db::commit();
+
         return response()->json([
             'success' => true,
             'message' =>'News updated successfully',
-            'data'=>$news
+            'data' => $news
         ], 200); 
-    }
-}
-
-catch(\Exception $e){
-Db::rollBack();
- return response()->json([
+    } catch(\Exception $e) {
+        Db::rollBack();
+        return response()->json([
             'success' => false,
             'message' =>'News not updated',
-            'error'=>$e->getMessage()
+            'error' => $e->getMessage()
         ], 400);
+    }
+}
+public function delete_news($news_id){
+    $news=News::findorFail($news_id);
+  if($news){
+    $news->delete();
+    return response()->json([
+        'success' => true,
+        'message' =>'News deleted successfully',
+        'error' =>$news
+    ], 400);
+  }
+  else{
+    return response()->json([
+        'success' => false,
+        'message' =>'Internal server error',
+        'data'=>null
+    ], 400);
+  }
 }
 
-}
 }

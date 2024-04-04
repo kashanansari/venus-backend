@@ -35,9 +35,11 @@ use App\Models\Poperty;
 use App\Models\Shares;
 use App\Models\Transfer;
 use App\Models\User_kyc;
+use App\Models\UserVotes;
 use App\Models\User;
 use App\Models\Votes;
 use App\Models\Withdraw;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 
 class usercontroller extends Controller
@@ -196,5 +198,45 @@ class usercontroller extends Controller
                 'message' =>'Status not updated', 
             ], 500); 
            }
+    }
+    public function create_user_vote(Request $request){
+        $validator=Validator::make($request->all(),[
+            'vote_id'=>'required|exists:users,id',
+            'user_id'=>'required|exists:users,id',
+            'admin_id'=>'required|exists:users,id',
+            'vote_choice'=>'required',
+        ]);
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'message' =>$validator->errors(), 
+            ], 402); 
+        }
+        Db::beginTransaction();
+        try{
+       $user_votes= UserVotes::create([
+            'user_id'=>$request->user_id,
+            'vote_id'=>$request->vote_id,
+            'admin_id'=>$request->admin_id,
+            'vote_choice'=>$request->vote_choice,
+            'date'=>formatDate(),
+            'time'=>formatTime(),
+        ]);
+        if($user_votes){
+            Db::commit();
+            return response()->json([
+                'success' => true,
+                'message' =>'User cast vote successfully',
+                'data'=>$user_votes 
+            ], 200); 
+        }
+    }
+    catch(\Exception $e){
+        return response()->json([
+            'success' => false,
+            'message' =>'Error in creation',
+            'data'=>$e->getMessage()
+        ], 500); 
+    }
     }
 }
