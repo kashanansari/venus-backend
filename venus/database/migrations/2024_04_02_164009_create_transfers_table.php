@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('transfers', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('property_id');
-            $table->foreign('property_id')->references('id')->on('poperties'); 
+            $table->foreign('property_id')->references('id')->on('properties'); 
             $table->unsignedBigInteger('sender_id');
             $table->foreign('sender_id')->references('id')->on('users');
             $table->unsignedBigInteger('reciever_id');

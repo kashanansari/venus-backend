@@ -25,6 +25,7 @@ Route::post('create_user_kyc',[usercontroller::class,'create_user_kyc'])->name('
 Route::put('kyc_accept',[usercontroller::class,'kyc_accept'])->name('kyc_accept');
 Route::put('kyc_reject',[usercontroller::class,'kyc_reject'])->name('kyc_reject');
 Route::post('create_user_vote',[usercontroller::class,'create_user_vote'])->name('create_user_vote');
+Route::get('get_userid',[usercontroller::class,'get_userid'])->name('get_userid');
 //builder
 
 Route::post('create_builder_kyc',[buildercontroller::class,'create_builder_kyc'])->name('create_builder_kyc');
@@ -47,6 +48,10 @@ Route::post('/create_news',[admincontroller::class,'create_news'])->name('create
 Route::get('/allnews',[admincontroller::class,'allnews'])->name('allnews');
 Route::post('/update_news',[admincontroller::class,'update_news'])->name('update_news');
 Route::delete('/delete_news/{news_id}',[admincontroller::class,'delete_news'])->name('delete_news');
+Route::post('/signup',[admincontroller::class,'signup'])->name('signup');
+Route::post('/login',[admincontroller::class,'login'])->name('login');
+Route::post('/verifyotp',[admincontroller::class,'verifyotp'])->name('verifyotp');
+Route::post('/resetpassword',[admincontroller::class,'resetpassword'])->name('resetpassword');
 
 
 Route::get('time',[usercontroller::class,'time'])->name('time');

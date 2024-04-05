@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
             $table->unsignedBigInteger('property_id');
-            $table->foreign('property_id')->references('id')->on('poperties'); 
+            $table->foreign('property_id')->references('id')->on('properties'); 
             $table->string('wallet_address')->nullable();
             $table->string('invested_amount')->nullable();
             $table->string('invested_date')->nullable();

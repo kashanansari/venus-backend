@@ -37,13 +37,181 @@ use App\Models\Transfer;
 use App\Models\User_kyc;
 use App\Models\User;
 use App\Models\Votes;
+use App\Models\UserVotes;
 use App\Models\Withdraw;
 use Illuminate\Support\Facades\DB;
 use PhpParser\Node\Stmt\Return_;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OtpMail;
 
 class admincontroller extends Controller
 {
     //
+    public function signup(Request $request){
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'first_name' => ['required'],
+                'last_name' => ['required'],
+                'email' => ['required', 'email', 'unique:users,email'],
+                'password' => ['required', 'min:8', 'confirmed'],
+                'password_confirmation' => ['required'],
+                'phone_no'=>'required',
+                'image' => 'required|image|mimes:jpeg,png,jpg,gif',
+            ]);
+        if ($validator->fails()) {
+            return response()->json($validator->messages(), 400);
+        }
+        $otpCode = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
+
+  $image=$request->file('image')->store('userimages','public');
+
+            DB::beginTransaction();
+            $data = [
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'phone_no'=>$request->phone_no,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'image'=>$image,
+                'otp'=>$otpCode,
+                'role'=>"Admin",
+                'status'=>"inactive",
+            ];
+            // $token=$data->createToken($request->email)->plainTextToken;
+            try {
+                $users = User::create($data);
+                Mail::to($users->email)->send(new OtpMail($otpCode));
+
+                DB::commit();
+            }
+             catch (\Throwable $e) {
+                DB::rollback();
+                echo $e->getMessage();
+                $users = null;
+            }
+            if ($users != null) {
+                return response()->json(
+                    [
+                        'success' => true,
+                        'message' => 'An otp code sent to your email please check',
+                    ],200);
+            } else {
+                return response()->json(
+                    [
+                        'message' => 'Internal server error',
+                        'success' => false,
+                        'users' => null,
+
+                    ],
+                    500
+                );
+            }
+
+    }
+    public function login(Request $request){
+        $validator=Validator::make($request->all(),[
+            'email'=>'required|email|exists:users,email',
+            'password'=>'required'
+
+        ]);
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'message' =>$validator->errors(), 
+            ], 402);  
+        }
+        $user=User::where('email',$request->email)
+        ->first();
+        if($user){
+            $password=Hash::check($request->password,$user->password);
+        if($password){
+            $token=$user->createToken($user->email)->plainTextToken;
+            return response()->json([
+                'success' => true,
+                'message' =>'User logged in successfully',
+                'data'=>$user,
+                'token'=>$token
+            ], 200);  
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' =>'Invalid credentials',
+                'data'=>null 
+            ], 400);  
+        }
+
+        }
+        return response()->json([
+            'success' => false,
+            'message' =>'Internal server error',
+            'data'=>null 
+        ], 500);  
+    }
+    public function verifyotp(Request $request){
+        $validator=Validator::make($request->all(),[
+            'email'=>'required|exists:users,email',
+            'otp'=>'required|numeric'
+        ]);
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'message' =>$validator->errors(), 
+            ], 402); 
+        }
+       $user= User::where('email',$request->email)
+        ->first();
+        if($user->otp==$request->otp){
+            $user->update(['otp'=>null]);
+            $token=$user->createToken($user->email)->plainTextToken;
+            return response()->json([
+                'success' => true,
+                'message' =>'Successfull authentication',
+                'data'=>$user,
+                'token'=>$token 
+            ], 402); 
+
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' =>'Invalid otp code',
+                'data'=>null
+            ], 402); 
+        }
+
+    }
+    public function resetpassword(Request $request){
+        $validator=Validator::make($request->all(),[
+            'email'=>'required|exists:users,email',
+            'new_password' => ['required', 'min:8', 'confirmed'],
+            'new_password_confirmation' => ['required'],            
+        ]);
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'message' =>$validator->errors(), 
+            ], 402); 
+        }
+        $user=User::where('email',$request->email)
+        ->first();
+        if($user){
+            $user->update(['password'=>Hash::make($request->new_password)]);
+            return response()->json([
+                'success' => true,
+                'message' =>'Password changed successfully',
+                'data'=>$user
+            ], 402); 
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' =>'Error in updation',
+                'data'=>null
+            ], 402); 
+        }
+    }
     public function createproperty(Request $request){
         Db::beginTransaction();
         try{
@@ -318,11 +486,11 @@ public function create_vote(Request $request){
         ], 402);    
     }
     $check=Votes::where('property_id',$request->property_id)
-    ->where('status','=','active')
+    ->where('end_date','>=',formatDate())
     ->first();
     if($check){
         return response()->json([
-            'success' => true,
+            'success' => false,
             'message' =>'voting poll of this property already exists',
             'data'=>null
         ], 401);    
@@ -340,7 +508,7 @@ public function create_vote(Request $request){
         'polling_option'=>$request->polling_option,
         'date'=>formatDate(),
         'time'=>formatTime(),
-        'status'=>'active'
+        'status'=>'opened'
     ]);
     if($votes){
         Db::commit();
@@ -362,7 +530,13 @@ public function create_vote(Request $request){
     }
 }
 public function get_voting_poll(){
+    Votes::where('end_date','<',formatDate())
+        ->update(['status'=>'closed']);
+
+    // Fetch all active votes
     $votes = Votes::active()->get();
+
+    // Check if any votes exist
     if($votes->isEmpty()){
         return response()->json([
             'success' => false,
@@ -370,14 +544,35 @@ public function get_voting_poll(){
             'data'=>null
         ], 400);
     }
-    else{
-        return response()->json([
-            'success' => true,
-            'message' =>'voting poll found successfully ',
-            'data'=>$votes
-        ], 200);
+
+    $voteCounts = [];
+
+    foreach ($votes as $vote) {
+        $voteCount = UserVotes::where('vote_id', $vote->id)->count();
+      $yescount= UserVotes::where('vote_id',$vote->id)
+        ->where('vote_choice','=','YES')
+        ->count() ;
+        $nocount= UserVotes::where('vote_id',$vote->id)
+        ->where('vote_choice','=','NO')
+        ->count() ;
+
+        $voteCounts[$vote->id] =[ 
+            'total_counts'=>$voteCount,
+            'yes_counts'=>$yescount,
+            'no_counts'=>$nocount
+    ];
     }
+
+    return response()->json([
+        'success' => true,
+        'message' =>'Voting polls found successfully',
+        'data' => [
+            'votes' => $votes,
+            'vote_counts' => $voteCounts
+        ]
+    ], 200);
 }
+
 public function update_votes(Request $request){
     $validator=Validator::make($request->all(),[
         'vote_id'=>'required|exists:votes,id'
@@ -486,24 +681,35 @@ public function create_news(Request $request){
     }
 }
 public function allnews(Request $request){
-    $news=News::active()
-    ->orderBy('created_at','desc')
-    ->get();
+    // Set default per page value
+    $perPage = 10;
+
+    // Check if per_page parameter is provided and is a whole number
+    if ($request->filled('per_page') && ctype_digit($request->per_page)) {
+        $perPage = intval($request->per_page);
+    }
+
+    // Fetch paginated news
+    $news = News::active()
+                ->orderBy('created_at', 'desc')
+                ->paginate($perPage);
+
     if(!$news->isEmpty()){
         return response()->json([
             'success' => true,
             'message' => 'News found successfully',
             'data' => $news
-        ], 500);
+        ], 200);
     }
     else{
         return response()->json([
             'success' => false,
             'message' => 'News not found',
             'data' => null
-        ], 400);
+        ], 404);
     }
 }
+
 
 public function update_news(Request $request){
     $validator = Validator::make($request->all(), [

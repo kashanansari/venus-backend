@@ -201,10 +201,10 @@ class usercontroller extends Controller
     }
     public function create_user_vote(Request $request){
         $validator=Validator::make($request->all(),[
-            'vote_id'=>'required|exists:users,id',
+            'vote_id'=>'required|exists:votes,id',
             'user_id'=>'required|exists:users,id',
-            'admin_id'=>'required|exists:users,id',
-            'vote_choice'=>'required',
+            // 'admin_id'=>'required|exists:users,id',
+            'vote_choice'=>'required|in:YES,NO,Accept,Reject',
         ]);
         if($validator->fails()){
             return response()->json([
@@ -212,15 +212,31 @@ class usercontroller extends Controller
                 'message' =>$validator->errors(), 
             ], 402); 
         }
+        $exists=UserVotes::where('vote_id',$request->vote_id)
+        ->where('user_id',$request->user_id)
+        ->exists();
+if($exists){
+    return response()->json([
+        'success' => false,
+        'message' =>'You have already cast your vote', 
+        'data'=>null
+    ], 402); 
+}
         Db::beginTransaction();
         try{
+            $admin_id = Votes::where('id',$request->vote_id)
+            ->pluck('user_id')
+            ->first();
+           
+            
        $user_votes= UserVotes::create([
             'user_id'=>$request->user_id,
             'vote_id'=>$request->vote_id,
-            'admin_id'=>$request->admin_id,
+            'admin_id'=>$admin_id,
             'vote_choice'=>$request->vote_choice,
             'date'=>formatDate(),
             'time'=>formatTime(),
+            'status'=>'active'
         ]);
         if($user_votes){
             Db::commit();
@@ -232,6 +248,7 @@ class usercontroller extends Controller
         }
     }
     catch(\Exception $e){
+        Db::rollBack();
         return response()->json([
             'success' => false,
             'message' =>'Error in creation',
@@ -239,4 +256,6 @@ class usercontroller extends Controller
         ], 500); 
     }
     }
-}
+
+    }
+
