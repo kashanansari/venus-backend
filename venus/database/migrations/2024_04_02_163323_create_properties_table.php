@@ -33,7 +33,7 @@ return new class extends Migration
             $table->string('govt_assessed_land')->nullable();
             $table->string('attachment')->nullable()->change();
             $table->string('cap')->nullable();
-            $table->string('annual_recurring_avenue')->nullable();
+            $table->string('annual_recurring_revenue')->nullable();
             $table->string('dividend')->nullable();
             $table->string('declaration')->nullable();
             $table->string('buider_wallet_address')->nullable();
@@ -42,6 +42,10 @@ return new class extends Migration
             $table->string('start_date')->nullable();
             $table->string('end_date')->nullable();
             $table->string('status')->nullable();
+            $table->string('gross')->nullable();
+            $table->string('zoning')->nullable();
+            $table->string('floor_area')->nullable();
+            $table->string('total_raised_amount')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

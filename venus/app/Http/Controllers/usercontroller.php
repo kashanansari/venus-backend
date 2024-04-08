@@ -45,6 +45,38 @@ use Illuminate\Support\Facades\DB;
 class usercontroller extends Controller
 {
     //
+    public function connect_wallet(Request $request){
+        $auth=Auth::user();
+        $validator=Validator::make($request->all(),[
+            'wallet_address'=>'required|unique:users,wallet_address'
+        ]);
+        if($validator->fails()){
+            return response()->json([
+                'success'=>false,
+                'message'=>$validator->messages()
+            ], 402, );
+        }
+        DB::beginTransaction();
+        try{
+        $wallet=User::where('id',$auth->id)
+        ->update(['wallet_address'=>$request->wallet_address]);
+        if($wallet){
+            DB::commit();
+            return response()->json([
+                'success'=>true,
+                'message'=>'Wallet address added successfully',
+                'data'=>''
+            ], 200, );
+        }
+
+        }
+        catch(\Exception $e){
+            return response()->json([
+                'success'=>false,
+                'error'=>$e->getMessage()
+            ], 200, );
+    }
+    }
     public function create_user_kyc(Request $request){
         DB::beginTransaction();
 
@@ -256,6 +288,59 @@ if($exists){
         ], 500); 
     }
     }
-
+    public function create_investment(Request $request){
+        $auth=Auth::user();
+        $validator=Validator::make($request->all(),[
+        'property_id'=>'required|exists:properties,id',
+        'wallet_address'=>'required',
+        'invested_amount'=>'required',
+        ]);
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'message' =>$validator->errors(),
+            ], 402);
+        }
+       $existing_investment= Investment::where('wallet_address',$request->wallet_address)
+        ->where('property_id',$request->property_id)
+        ->first();
+        if($existing_investment){
+            $new_amount=$existing_investment->invested_amount+$request->invested_amount;
+            $existing_investment->update(['invested_amount'=>$new_amount]);
+            return response()->json([
+                'success' => true,
+                'message' =>'Investment updated successfully',
+                'data'=>$existing_investment,
+            ], 200);
+        }
+        else{
+        try{
+            Db::beginTransaction();
+        $investment=Investment::create([
+            'user_id'=>$auth->id,
+            'property_id'=>$request->property_id,
+            'wallet_address'=>$request->wallet_address,
+            'invested_amount'=>$request->invested_amount,
+            'invested_date'=>formatDate(),
+            'invested_time'=>formatTime(),
+    
+        ]);
+        if($investment){
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' =>'Investment created successfully',
+                'data'=>$investment
+            ], 200);
+        }
     }
-
+    catch(\Exception $e){
+        return response()->json([
+            'success' => false,
+            'error' =>$e->getMessage(),
+        ], 400);
+    }
+    }
+    
+    }
+}

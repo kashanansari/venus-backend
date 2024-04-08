@@ -18,6 +18,7 @@ use App\Traits\dateTraits;
 use Illuminate\Support\Facades\Validator;
 use App\Notifications\UserNotification;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 
 // use Auth;
@@ -212,96 +213,164 @@ class admincontroller extends Controller
             ], 402); 
         }
     }
-    public function createproperty(Request $request){
-        Db::beginTransaction();
-        try{
-        $validator=validator::make($request->all(),[
-            'user_id'=>'required|exists:users,id',
-            'images' => 'required|image|mimes:png,jpeg',
-            'property_name'=>'required',
-            'property_type'=>'required',
-            'property_size'=>'required',
-            'rental_price'=>'required',
-            'rental_frequency'=>'required',
-            'no_of_bedrooms'=>'required',
-            'amenities'=>'required',
-            'description'=>'required',
-            'verification_details'=>'required',
-            'property_address'=>'required',
-            'project_completion_date'=>'required',
-            'floor'=>'required',
-            'govt_assessed_land'=>'required',
-            'cap'=>'required',
-            'annual_recurring_avenue'=>'required',
-            'dividend'=>'required',
-            'declaration'=>'required',
-            'buider_wallet_address'=>'required',
-            'min_amount'=>'required',
-            'max_amount'=>'required',
-            'start_date'=>'required',
-            'end_date'=>'required',
-
+    public function change_password(Request $request){
+        $auth=Auth::user();
+        if($auth){
+        $validator=Validator::make($request->all(),[
+            'old_password'=>['required','min:8'],
+            'new_password' => ['required', 'min:8', 'confirmed'],
+            'new_password_confirmation' => ['required'],            
         ]);
         if($validator->fails()){
             return response()->json([
                 'success' => false,
                 'message' =>$validator->errors(), 
-            ], 402);  
+            ], 402); 
         }
-        $property=Property::create([
-            'user_id'=>$request->user_id,
-            'images'=>$request->images,
-            'property_name'=>$request->property_name,
-            'property_type'=>$request->property_type,
-            'property_size'=>$request->property_size,
-            'rental_price'=>$request->rental_price,
-            'rental_frequency'=>$request->rental_frequency,
-            'no_of_bedrooms'=>$request->no_of_bedrooms,
-            'amenities'=>$request->amenities,
-            'description'=>$request->description,
-            'verification_details'=>$request->verification_details,
-            'property_address'=>$request->property_address,
-            'project_completion_date'=>$request->project_completion_date,
-            'floor'=>$request->floor,
-            'govt_assessed_land'=>$request->govt_assessed_land,
-            'cap'=>$request->cap,
-            'annual_recurring_avenue'=>$request->annual_recurring_avenue,
-            'dividend'=>$request->dividend,
-            'declaration'=>$request->declaration,
-            'buider_wallet_address'=>$request->buider_wallet_address,
-            'min_amount'=>$request->min_amount,
-            'max_amount'=>$request->max_amount,
-            'start_date'=>$request->start_date,
-            'end_date'=>$request->end_date,
-            'status'=>"active",
-            
-        ]);
-        if($property){
-            Db::commit();
+        $user=User::where('id',$auth->id)
+        ->first();
+        if($user && Hash::check($request->old_password,$user->password)){
+            $user->update(['password'=>Hash::make($request->new_password)]);
             return response()->json([
                 'success' => true,
-                'message' =>'Property created successfully',
-                'data'=>$property 
-            ], 200);   
+                'message' =>'Password changed successfully', 
+            ], 200); 
         }
         else{
             return response()->json([
                 'success' => false,
-                'message' =>'Property not created',
-                'data'=>null 
+                'message' =>'Invalid old password', 
             ], 400);   
         }
     }
-    catch(\Exception $e){
+    }
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user) {
+            $user->tokens()->delete();
+            return response()->json([
+                'success' => true,
+                'message' =>'User logged out successfully', 
+            ], 200);
+        }
+
         return response()->json([
             'success' => false,
-            'message' => 'An error occurred while processing the request',
-            'error' => $e->getMessage()
-        ], 500);
+            'message' =>'User not found', 
+        ], 404);
     }
+        public function createproperty(Request $request){
+            $auth=Auth::user();
+            Db::beginTransaction();
+            try{
+            $validator=validator::make($request->all(),[
+                // 'user_id'=>'required|exists:users,id',
+                'images' => 'required|image|mimes:png,jpeg',
+                'property_name'=>'required',
+                'property_type'=>'required',
+                'property_size'=>'required',
+                'rental_price'=>'required',
+                'rental_frequency'=>'required',
+                'no_of_bedrooms'=>'required',
+                'amenities'=>'required',
+                'description'=>'required',
+                'verification_details'=>'required',
+                'property_address'=>'required',
+                'project_completion_date'=>'required',
+                'floor'=>'required',
+                'govt_assessed_land'=>'required',
+                'cap'=>'required',
+                'annual_recurring_avenue'=>'required',
+                'dividend'=>'required',
+                'declaration'=>'required',
+                'buider_wallet_address'=>'required',
+                'min_amount'=>'required',
+                'max_amount'=>'required',
+                'start_date'=>'required',
+                'end_date'=>'required',
+                'gross'=>'required',
+                'zoning'=>'nullable',
+                'floor_area'=>'required',
+                'total_raised_amount'=>'required',
+                'attachment'=>'required|file|mimes:pdf,doc,docx|max:2048'
 
-}
+            ]);
+            if($validator->fails()){
+                return response()->json([
+                    'success' => false,
+                    'message' =>$validator->errors(), 
+                ], 402);  
+            }
+            $propertyExists = Property::where('property_address', $request->property_address)
+            ->where('end_date', '>=',$request->end_date)
+            ->first();
+
+        if ($propertyExists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A property with the same address is already active', 
+            ], 400);  
+        }
+            $file = $request->file('attachment')->store('documents', 'public');
+            $property=Property::create([
+                'user_id'=>$auth->id,
+                'images'=>$request->images,
+                'property_name'=>$request->property_name,
+                'property_type'=>$request->property_type,
+                'property_size'=>$request->property_size,
+                'rental_price'=>$request->rental_price,
+                'rental_frequency'=>$request->rental_frequency,
+                'no_of_bedrooms'=>$request->no_of_bedrooms,
+                'amenities'=>$request->amenities,
+                'description'=>$request->description,
+                'verification_details'=>$request->verification_details,
+                'property_address'=>$request->property_address,
+                'project_completion_date'=>$request->project_completion_date,
+                'floor'=>$request->floor,
+                'govt_assessed_land'=>$request->govt_assessed_land,
+                'cap'=>$request->cap,
+                'annual_recurring_avenue'=>$request->annual_recurring_avenue,
+                'dividend'=>$request->dividend,
+                'declaration'=>$request->declaration,
+                'buider_wallet_address'=>$request->buider_wallet_address,
+                'min_amount'=>$request->min_amount,
+                'max_amount'=>$request->max_amount,
+                'start_date'=>$request->start_date,
+                'end_date'=>$request->end_date,
+                'total_raised_amount'=>$request->total_raised_amount,
+                'attachment' => $file,
+                'status'=>"active",
+                
+            ]);
+            if($property){
+                Db::commit();
+                return response()->json([
+                    'success' => true,
+                    'message' =>'Property created successfully',
+                    'data'=>$property 
+                ], 200);   
+            }
+            else{
+                return response()->json([
+                    'success' => false,
+                    'message' =>'Property not created',
+                    'data'=>null 
+                ], 400);   
+            }
+        }
+        catch(\Exception $e){
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while processing the request',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
+    }
 public function getproperty(Request $request){
+    Auth::user();
     $property= Property::active()->get();
 
     if($property){
@@ -319,6 +388,42 @@ public function getproperty(Request $request){
         ], 200);   
     }
 }
+public function detailproperties(Request $request)
+{
+    $properties = Property::select('*', DB::raw('(SELECT COUNT(*) FROM investments WHERE property_id = properties.id) as No_of_users_invested'))
+    ->get()
+    ->map(function ($details) {
+        $details->listing_date = $details->created_at->format('d-m-Y');
+        unset($details->created_at);
+        unset($details->updated_at);
+        return $details;
+    });
+
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Properties found successfully',
+        'data' => $properties
+    ], 200);
+}
+public function allproperties(Request $request){
+    $properties = Property::select('id as property_id','images','property_address as address','dividend','start_date','end_date','cap','annual_recurring_revenue', DB::raw('(SELECT COUNT(*) FROM investments WHERE property_id = properties.id) as No_of_users_invested'))
+    ->get()
+    ->map(function ($details) {
+        unset($details->created_at);
+        unset($details->updated_at);
+        return $details;
+    });
+
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Properties found successfully',
+        'data' => $properties
+    ], 200);
+}
+
+
 public function single_property($property_id){
     $property=Property::where('id',$property_id)
     ->first();
@@ -470,6 +575,7 @@ public function closed_properties(Request $request){
 }
 
 public function create_vote(Request $request){
+    $auth=Auth::user();
     $validator=Validator::make($request->all(),[
         'user_id'=>'required|exists:users,id',
         'property_id'=>'required|exists:properties,id',
@@ -499,7 +605,7 @@ public function create_vote(Request $request){
     Db::beginTransaction();
     try{
     $votes=Votes::create([
-        'user_id'=>$request->user_id,
+        'user_id'=>$auth->id,
         'property_id'=>$request->property_id,
         'title'=>$request->title,
         'description'=>$request->description,
@@ -636,9 +742,10 @@ else{
 }
 }
 public function create_news(Request $request){
+    $auth=Auth::user();
     $validator = Validator::make($request->all(), [
         'title' => 'required',
-        'user_id' => 'required',
+        // 'user_id' => 'required',
         'description' => 'required',
         'image' => 'required|image|mimes:jpeg,png,jpg,gif', 
     ]);
@@ -655,7 +762,7 @@ public function create_news(Request $request){
     Db::beginTransaction();
     try {
         $news = News::create([
-            'user_id' => $request->user_id,
+            'user_id' => $auth->id,
             'title' => $request->title,
             'description' => $request->description,
             'image' => $imagePath,
@@ -779,6 +886,12 @@ public function delete_news($news_id){
         'data'=>null
     ], 400);
   }
+}
+
+public function hash_password(){
+    $pass=formatDate();
+    
+    return $pass;
 }
 
 }

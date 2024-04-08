@@ -21,17 +21,27 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 //user
+Route::middleware(['auth:sanctum','User'])->group(function(){
+
 Route::post('create_user_kyc',[usercontroller::class,'create_user_kyc'])->name('create_user_kyc');
 Route::put('kyc_accept',[usercontroller::class,'kyc_accept'])->name('kyc_accept');
 Route::put('kyc_reject',[usercontroller::class,'kyc_reject'])->name('kyc_reject');
 Route::post('create_user_vote',[usercontroller::class,'create_user_vote'])->name('create_user_vote');
 Route::get('get_userid',[usercontroller::class,'get_userid'])->name('get_userid');
+Route::post('/create_investment',[usercontroller::class,'create_investment'])->name('create_investment');
+Route::post('/connect_wallet',[usercontroller::class,'connect_wallet'])->name('connect_wallet');
+
+});
 //builder
+Route::middleware(['auth:sanctum','Builder'])->group(function(){
 
 Route::post('create_builder_kyc',[buildercontroller::class,'create_builder_kyc'])->name('create_builder_kyc');
 Route::put('kyc_accept',[buildercontroller::class,'kyc_accept'])->name('kyc_accept');
 Route::put('kyc_reject',[buildercontroller::class,'kyc_reject'])->name('kyc_reject');
+});
 //admin
+Route::middleware(['auth:sanctum','Admin'])->group(function(){
+
 Route::post('createproperty',[admincontroller::class,'createproperty'])->name('createproperty');
 Route::get('getproperty',[admincontroller::class,'getproperty'])->name('getproperty');
 Route::get('single_property/{property_id}',[admincontroller::class,'single_property'])->name('single_property');
@@ -48,10 +58,20 @@ Route::post('/create_news',[admincontroller::class,'create_news'])->name('create
 Route::get('/allnews',[admincontroller::class,'allnews'])->name('allnews');
 Route::post('/update_news',[admincontroller::class,'update_news'])->name('update_news');
 Route::delete('/delete_news/{news_id}',[admincontroller::class,'delete_news'])->name('delete_news');
+// Route::post('/create_investment',[admincontroller::class,'create_investment'])->name('create_investment');
+
 Route::post('/signup',[admincontroller::class,'signup'])->name('signup');
-Route::post('/login',[admincontroller::class,'login'])->name('login');
+// Route::post('/login',[admincontroller::class,'login'])->name('login');
 Route::post('/verifyotp',[admincontroller::class,'verifyotp'])->name('verifyotp');
 Route::post('/resetpassword',[admincontroller::class,'resetpassword'])->name('resetpassword');
+Route::put('/change_password',[admincontroller::class,'change_password'])->name('change_password');
+Route::post('/logout',[admincontroller::class,'logout'])->name('logout');
+Route::get('/detailproperties',[admincontroller::class,'detailproperties'])->name('detailproperties');
+Route::get('/allproperties',[admincontroller::class,'allproperties'])->name('allproperties');
 
-
+});
 Route::get('time',[usercontroller::class,'time'])->name('time');
+Route::get('hash_password',[admincontroller::class,'hash_password'])->name('hash_password');
+
+//Admin authentication
+Route::post('/login',[admincontroller::class,'login'])->name('login');
