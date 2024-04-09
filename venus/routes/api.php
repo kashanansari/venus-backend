@@ -24,8 +24,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware(['auth:sanctum','User'])->group(function(){
 
 Route::post('create_user_kyc',[usercontroller::class,'create_user_kyc'])->name('create_user_kyc');
-Route::put('kyc_accept',[usercontroller::class,'kyc_accept'])->name('kyc_accept');
-Route::put('kyc_reject',[usercontroller::class,'kyc_reject'])->name('kyc_reject');
+// Route::put('kyc_accept',[usercontroller::class,'kyc_accept'])->name('kyc_accept');
+// Route::put('kyc_reject',[usercontroller::class,'kyc_reject'])->name('kyc_reject');
 Route::post('create_user_vote',[usercontroller::class,'create_user_vote'])->name('create_user_vote');
 Route::get('get_userid',[usercontroller::class,'get_userid'])->name('get_userid');
 Route::post('/create_investment',[usercontroller::class,'create_investment'])->name('create_investment');
@@ -39,9 +39,7 @@ Route::post('/view_on_news',[usercontroller::class,'view_on_news'])->name('view_
 Route::middleware(['auth:sanctum','Builder'])->group(function(){
 
 Route::post('create_builder_kyc',[buildercontroller::class,'create_builder_kyc'])->name('create_builder_kyc');
-Route::put('kyc_accept',[buildercontroller::class,'kyc_accept'])->name('kyc_accept');
-Route::put('kyc_reject',[buildercontroller::class,'kyc_reject'])->name('kyc_reject');
-});
+
 //admin
 Route::middleware(['auth:sanctum','Admin'])->group(function(){
 
@@ -62,7 +60,9 @@ Route::get('/allnews',[admincontroller::class,'allnews'])->name('allnews');
 Route::post('/update_news',[admincontroller::class,'update_news'])->name('update_news');
 Route::delete('/delete_news/{news_id}',[admincontroller::class,'delete_news'])->name('delete_news');
 // Route::post('/create_investment',[admincontroller::class,'create_investment'])->name('create_investment');
-
+Route::put('kyc_accept',[admincontroller::class,'kyc_accept'])->name('kyc_accept');
+Route::put('kyc_reject',[admincontroller::class,'kyc_reject'])->name('kyc_reject');
+});
 // Route::post('/signup',[admincontroller::class,'signup'])->name('signup');
 // Route::post('/login',[admincontroller::class,'login'])->name('login');
 // Route::post('/verifyotp',[admincontroller::class,'verifyotp'])->name('verifyotp');
