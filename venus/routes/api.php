@@ -30,6 +30,8 @@ Route::post('create_user_vote',[usercontroller::class,'create_user_vote'])->name
 Route::get('get_userid',[usercontroller::class,'get_userid'])->name('get_userid');
 Route::post('/create_investment',[usercontroller::class,'create_investment'])->name('create_investment');
 Route::post('/connect_wallet',[usercontroller::class,'connect_wallet'])->name('connect_wallet');
+Route::get('/get_amount_for_withdarwl/{property_id}',[usercontroller::class,'get_amount_for_withdarwl'])->name('get_amount_for_withdarwl');
+Route::post('/withdraw',[usercontroller::class,'withdraw'])->name('withdraw');
 
 });
 //builder
@@ -68,6 +70,9 @@ Route::put('/change_password',[admincontroller::class,'change_password'])->name(
 Route::post('/logout',[admincontroller::class,'logout'])->name('logout');
 Route::get('/detailproperties',[admincontroller::class,'detailproperties'])->name('detailproperties');
 Route::get('/allproperties',[admincontroller::class,'allproperties'])->name('allproperties');
+Route::get('/propertyinvestmentdetails/{property_id}',[admincontroller::class,'propertyinvestmentdetails'])->name('propertyinvestmentdetails');
+Route::get('/get_builder_kyc',[admincontroller::class,'get_builder_kyc'])->name('get_builder_kyc');
+Route::get('/get_user_kyc',[admincontroller::class,'get_user_kyc'])->name('get_user_kyc');
 
 });
 Route::get('time',[usercontroller::class,'time'])->name('time');

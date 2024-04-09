@@ -31,7 +31,7 @@ use App\Models\Builder_kyc;
 use App\Models\Dividend;
 use App\Models\Investment;
 use App\Models\News;
-use App\Models\Poperty;
+use App\Models\Property;
 use App\Models\Shares;
 use App\Models\Transfer;
 use App\Models\User_kyc;
@@ -78,11 +78,12 @@ class usercontroller extends Controller
     }
     }
     public function create_user_kyc(Request $request){
+       $auth=Auth::user();
         DB::beginTransaction();
 
         try {
         $validator=Validator::make($request->all(),[
-         'user_id'=>'required|exists:users,id',
+        //  'user_id'=>'required|exists:users,id',
          'date_of_birth'=>'required',
          'cnic'=>'required',
          'license'=>'required',
@@ -111,7 +112,7 @@ class usercontroller extends Controller
         
         $user_kyc=User_kyc::create([
             
-                'user_id'=>$request->user_id,
+                'user_id'=>$auth->id,
                 'date_of_birth'=>$request->date_of_birth,
                 'cnic'=>$request->cnic,
                 'licenese'=>$request->licenese,
@@ -129,7 +130,7 @@ class usercontroller extends Controller
                 'source_of_funds'=>$request->source_of_funds,
                 'date'=>formatDate(),
                 'time'=>formatTime(),
-                'status'=>'Reject'
+                'status'=>'pending'
                 
             
         ]);
@@ -176,6 +177,7 @@ class usercontroller extends Controller
     }
 }
     public function kyc_accept(Request $request){
+        Auth::user();
         $validator=Validator::make($request->all(),[
             'kyc_id'=>'required|exists:user_kycs,id'
 
@@ -189,7 +191,7 @@ class usercontroller extends Controller
            $user_kyc=User_kyc::where('id',$request->kyc_id)
            ->first();
            if($user_kyc){
-            $user_kyc->update(['status'=>'Accept']);
+            $user_kyc->update(['status'=>'accept']);
             return response()->json([
                 'success' => true,
                 'message' =>'Status updated successfully', 
@@ -217,7 +219,7 @@ class usercontroller extends Controller
            $user_kyc=User_kyc::where('id',$request->kyc_id)
            ->first();
            if($user_kyc){
-            $user_kyc->update(['status'=>'Reject']);
+            $user_kyc->update(['status'=>'reject']);
             return response()->json([
                 'success' => true,
                 'message' =>'Status updated successfully', 
@@ -232,9 +234,10 @@ class usercontroller extends Controller
            }
     }
     public function create_user_vote(Request $request){
+        $auth=Auth::user();
         $validator=Validator::make($request->all(),[
             'vote_id'=>'required|exists:votes,id',
-            'user_id'=>'required|exists:users,id',
+            // 'user_id'=>'required|exists:users,id',
             // 'admin_id'=>'required|exists:users,id',
             'vote_choice'=>'required|in:YES,NO,Accept,Reject',
         ]);
@@ -262,7 +265,7 @@ if($exists){
            
             
        $user_votes= UserVotes::create([
-            'user_id'=>$request->user_id,
+            'user_id'=>$auth->id,
             'vote_id'=>$request->vote_id,
             'admin_id'=>$admin_id,
             'vote_choice'=>$request->vote_choice,
@@ -343,4 +346,81 @@ if($exists){
     }
     
     }
+    public function get_amount_for_withdarwl($property_id){
+        $auth=Auth::user();
+      
+        $data=Investment::where('property_id',$property_id)
+        ->where('user_id',$auth->id)
+        ->select('invested_amount','invested_date')
+        ->get();
+        if($data->isEmpty()){
+            return response()->json([
+                'success' => false,
+                'message' =>'No data found',
+                'data'=>null
+            ], 400);
+        }
+        return response()->json([
+            'success' => true,
+            'message' =>'Data found succcessfully',
+            'data'=>$data
+        ], 200);
+
+    }
+public function withdraw(Request $request){
+    $auth=Auth::user();
+        $validator=Validator::make($request->all(),[
+    'property_id'=>'required|exists:properties,id',
+    'amount'=>'required'
+    ]);
+    if($validator->fails()){
+        return response()->json([
+            'success' => false,
+            'error' =>$validator->errorS(),
+        ], 400);
+    }
+    $exists=Property::where('id',$request->property_id)
+    ->where('end_date','>=',formatDate())
+    ->first();
+    if($exists){
+        return response()->json([
+            'success' => false,
+            'error' =>'Cannot with draw untill the pool ends',
+        ], 400);
+    }
+    DB::beginTransaction();
+    try{
+        Investment::where('property_id',$request->property_id)
+                   ->where('user_id',$auth->id) 
+                   ->delete();
+    $withdarw=Withdraw::create([
+        'user_id'=>$auth->id,
+        'property_id'=>$request->property_id,
+        'amount'=>$request->amount,
+        'date'=>formatDate(),
+        'time'=>formatTime(),
+    ]);
+    if($withdarw){
+        Db::commit();
+        return response()->json([
+            'success' => true,
+            'error' =>'Amount withdrawl successfully',
+        ], 200);
+    }
+    
+}
+catch(\Exception $e){
+    return response()->json([
+        'success' => false,
+        'error' =>$e->getMessage(),
+    ], 200);
+}
+}
+public function transfer(Request $request){
+ $validator=Validator::make($request->all(),[
+      'property_id'=>'required',
+      'reciever_id'=>'required',
+      
+ ]) ;  
+}
 }

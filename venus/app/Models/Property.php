@@ -39,7 +39,11 @@ class Property extends Model
         'max_amount',
         'start_date',
         'end_date',
-        'status'
+        'status',
+        'total_raised_amount',
+        'floor_area',
+        'zoning',
+        'gross'
 
     ];
     public function scopeActive($query)

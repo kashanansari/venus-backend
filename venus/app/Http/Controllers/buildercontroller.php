@@ -43,11 +43,12 @@ class buildercontroller extends Controller
 {
     //
     public function create_builder_kyc(Request $request){
+     $auth=Auth::user();
         DB::beginTransaction();
 
         try {
         $validator=Validator::make($request->all(),[
-         'builder_id'=>'required|exists:users,id',
+        //  'builder_id'=>'required|exists:users,id',
          'date_of_birth'=>'required',
          'cnic'=>'required',
          'license'=>'required',
@@ -75,7 +76,7 @@ class buildercontroller extends Controller
         
         $builder_kyc=Builder_kyc::create([
             
-                'builder_id'=>$request->builder_id,
+                'builder_id'=>$auth->id,
                 'date_of_birth'=>$request->date_of_birth,
                 'cnic'=>$request->cnic,
                 'licenese'=>$request->licenese,
@@ -93,7 +94,7 @@ class buildercontroller extends Controller
                 'source_of_funds'=>$request->source_of_funds,
                 'date'=>formatDate(),
                 'time'=>formatTime(),
-                'status'=>'Reject'
+                'status'=>'pending'
                 
             
         ]);
@@ -143,7 +144,7 @@ public function kyc_accept(Request $request){
        $builder_kyc=Builder_kyc::where('id',$request->kyc_id)
        ->first();
        if($builder_kyc){
-        $builder_kyc->update(['status'=>'Accept']);
+        $builder_kyc->update(['status'=>'accept']);
         return response()->json([
             'success' => true,
             'message' =>'Status updated successfully', 
@@ -172,7 +173,7 @@ public function kyc_reject(Request $request){
        $builder_kyc=Builder_kyc::where('id',$request->kyc_id)
        ->first();
        if($builder_kyc){
-        $builder_kyc->update(['status'=>'Reject']);
+        $builder_kyc->update(['status'=>'reject']);
         return response()->json([
             'success' => true,
             'message' =>'Status updated successfully',

@@ -291,7 +291,7 @@ class admincontroller extends Controller
                 'start_date'=>'required',
                 'end_date'=>'required',
                 'gross'=>'required',
-                'zoning'=>'nullable',
+                'zoning'=>'required',
                 'floor_area'=>'required',
                 'total_raised_amount'=>'required',
                 'attachment'=>'required|file|mimes:pdf,doc,docx|max:2048'
@@ -314,9 +314,10 @@ class admincontroller extends Controller
             ], 400);  
         }
             $file = $request->file('attachment')->store('documents', 'public');
+            $images = $request->file('images')->store('property', 'public');
             $property=Property::create([
                 'user_id'=>$auth->id,
-                'images'=>$request->images,
+                'images'=>$images,
                 'property_name'=>$request->property_name,
                 'property_type'=>$request->property_type,
                 'property_size'=>$request->property_size,
@@ -340,6 +341,7 @@ class admincontroller extends Controller
                 'start_date'=>$request->start_date,
                 'end_date'=>$request->end_date,
                 'total_raised_amount'=>$request->total_raised_amount,
+                'zoning'=>$request->zoning,
                 'attachment' => $file,
                 'status'=>"active",
                 
@@ -407,7 +409,7 @@ public function detailproperties(Request $request)
     ], 200);
 }
 public function allproperties(Request $request){
-    $properties = Property::select('id as property_id','images','property_address as address','dividend','start_date','end_date','cap','annual_recurring_revenue', DB::raw('(SELECT COUNT(*) FROM investments WHERE property_id = properties.id) as No_of_users_invested'))
+    $properties = Property::select('id as property_id','images','property_address as address','dividend','start_date','end_date','cap','annual_recurring_revenue', DB::raw('(SELECT COUNT(*) FROM investments WHERE property_id = properties.id AND deleted_at IS NULL) as No_of_users_invested'))
     ->get()
     ->map(function ($details) {
         unset($details->created_at);
@@ -577,7 +579,7 @@ public function closed_properties(Request $request){
 public function create_vote(Request $request){
     $auth=Auth::user();
     $validator=Validator::make($request->all(),[
-        'user_id'=>'required|exists:users,id',
+        // 'user_id'=>'required|exists:users,id',
         'property_id'=>'required|exists:properties,id',
         'title'=>'required',
         'description'=>'required',
@@ -887,7 +889,71 @@ public function delete_news($news_id){
     ], 400);
   }
 }
-
+public function propertyinvestmentdetails($property_id){
+    $property=Property::where('id',$property_id)
+    ->select('id','property_name','property_type','rental_price','dividend','total_raised_amount')
+    ->get()
+    ->map(function($investment){
+        $investment->no_of_users_invested=Investment::where('property_id',$investment->id)
+        ->count();
+        $investment->total_invested_amount=Investment::where('property_id',$investment->id)
+        ->sum('invested_amount');
+        $investment->ivestments=Investment::where('property_id',$investment->id)
+        ->join('users','investments.user_id','=','users.id')
+        ->select('users.id','users.email','users.wallet_address','investments.invested_amount','investments.invested_date')
+        ->get();
+        return $investment;
+    });
+    
+    return response()->json([
+        'success' => true,
+        'message' =>'Data found successfully',
+        'data'=>$property
+    ], 200);
+}
+public function get_builder_kyc(Request $request){
+    $data=Builder_kyc::orderBy('created_at','desc')
+                   ->get()
+                   ->map(function($values){
+                    $values->submission_date=$values->date;
+                    unset($values->created_at);
+                    unset($values->updated_at);
+                    return $values;   
+                   });
+                   if($data->isEmpty()){
+                    return response()->json([
+                        'success' => false,
+                        'message' =>'No data found',
+                        'data'=>null
+                    ], 400);
+                   }
+    return response()->json([
+        'success' => true,
+        'message' =>'Data found successfully',
+        'data'=>$data
+    ], 200);
+}public function get_user_kyc(Request $request){
+    $data=User_kyc::orderBy('created_at','desc')
+                   ->get()
+                   ->map(function($values){
+                    $values->submission_date=$values->date;
+                    unset($values->created_at);
+                    unset($values->updated_at);
+                    return $values;   
+                   });
+                   if($data->isEmpty()){
+                    return response()->json([
+                        'success' => false,
+                        'message' =>'No data found',
+                        'data'=>null
+                    ], 400);
+                   }
+    return response()->json([
+        'success' => true,
+        'message' =>'Data found successfully',
+        'data'=>$data
+    ], 200);
+}
 public function hash_password(){
     $pass=formatDate();
     
