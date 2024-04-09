@@ -39,12 +39,117 @@ use App\Models\UserVotes;
 use App\Models\User;
 use App\Models\Votes;
 use App\Models\Withdraw;
+use App\Models\News_views;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OtpMail;
 
 class usercontroller extends Controller
 {
     //
+    public function signup(Request $request){
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'first_name' => ['required'],
+                'last_name' => ['required'],
+                'email' => ['required', 'email', 'unique:users,email'],
+                'password' => ['required', 'min:8', 'confirmed'],
+                'password_confirmation' => ['required'],
+                'phone_no'=>'required',
+                'image' => 'required|image|mimes:jpeg,png,jpg,gif',
+            ]);
+        if ($validator->fails()) {
+            return response()->json($validator->messages(), 400);
+        }
+        $otpCode = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
+
+  $image=$request->file('image')->store('userimages','public');
+
+            DB::beginTransaction();
+            $data = [
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'phone_no'=>$request->phone_no,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'image'=>$image,
+                'otp'=>$otpCode,
+                'role'=>"User",
+                'status'=>"inactive",
+            ];
+            // $token=$data->createToken($request->email)->plainTextToken;
+            try {
+                $users = User::create($data);
+                Mail::to($users->email)->send(new OtpMail($otpCode));
+
+                DB::commit();
+            }
+             catch (\Throwable $e) {
+                DB::rollback();
+                echo $e->getMessage();
+                $users = null;
+            }
+            if ($users != null) {
+                return response()->json(
+                    [
+                        'success' => true,
+                        'message' => 'An otp code sent to your email please check',
+                    ],200);
+            } else {
+                return response()->json(
+                    [
+                        'message' => 'Internal server error',
+                        'success' => false,
+                        'users' => null,
+
+                    ],
+                    500
+                );
+            }
+
+    }
+    public function login(Request $request){
+        $validator=Validator::make($request->all(),[
+            'email'=>'required|email|exists:users,email',
+            'password'=>'required'
+
+        ]);
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'message' =>$validator->errors(), 
+            ], 402);  
+        }
+        $user=User::where('email',$request->email)
+        ->first();
+        if($user){
+            $password=Hash::check($request->password,$user->password);
+        if($password){
+            $token=$user->createToken($user->email)->plainTextToken;
+            return response()->json([
+                'success' => true,
+                'message' =>'User logged in successfully',
+                'data'=>$user,
+                'token'=>$token
+            ], 200);  
+        }
+        else{
+            return response()->json([
+                'success' => false,
+                'message' =>'Invalid credentials',
+                'data'=>null 
+            ], 400);  
+        }
+
+        }
+        return response()->json([
+            'success' => false,
+            'message' =>'Internal server error',
+            'data'=>null 
+        ], 500);  
+    }
     public function connect_wallet(Request $request){
         $auth=Auth::user();
         $validator=Validator::make($request->all(),[
@@ -420,7 +525,65 @@ public function transfer(Request $request){
  $validator=Validator::make($request->all(),[
       'property_id'=>'required',
       'reciever_id'=>'required',
-      
+
  ]) ;  
 }
+
+public function view_on_news(Request $request)
+{
+    $auth = Auth::user();
+    $validator = Validator::make($request->all(), [
+        'news_id' => 'required|exists:news,id'
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => $validator->errors()->first(),
+        ], 402);
+    }
+
+    $already = News_views::where('news_id', $request->news_id)
+        ->where('user_id', $auth->id)
+        ->exists();
+
+    if ($already) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Already seen this news earlier',
+        ], 400);
+    }
+
+    DB::beginTransaction();
+    try {
+        $news_views = News_views::create([
+            'news_id' => $request->news_id,
+            'user_id' => $auth->id
+        ]);
+
+        if ($news_views) {
+            $views = News_views::where('news_id', $request->news_id)->count();
+            $update_news = News::where('id',$request->news_id)->first(); // Find the news item
+            $update_news->total_views = $views; // Update total_views with the count of views
+            $update_news->save();
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Views added successfully',
+                'data' => $news_views,
+                // 'count'=>$views,
+            ], 200);
+        }
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+        ], 400);
+    }
+}
+
+
 }

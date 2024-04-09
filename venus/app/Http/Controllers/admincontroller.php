@@ -48,68 +48,68 @@ use App\Mail\OtpMail;
 class admincontroller extends Controller
 {
     //
-    public function signup(Request $request){
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'first_name' => ['required'],
-                'last_name' => ['required'],
-                'email' => ['required', 'email', 'unique:users,email'],
-                'password' => ['required', 'min:8', 'confirmed'],
-                'password_confirmation' => ['required'],
-                'phone_no'=>'required',
-                'image' => 'required|image|mimes:jpeg,png,jpg,gif',
-            ]);
-        if ($validator->fails()) {
-            return response()->json($validator->messages(), 400);
-        }
-        $otpCode = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
+//     public function signup(Request $request){
+//         $validator = Validator::make(
+//             $request->all(),
+//             [
+//                 'first_name' => ['required'],
+//                 'last_name' => ['required'],
+//                 'email' => ['required', 'email', 'unique:users,email'],
+//                 'password' => ['required', 'min:8', 'confirmed'],
+//                 'password_confirmation' => ['required'],
+//                 'phone_no'=>'required',
+//                 'image' => 'required|image|mimes:jpeg,png,jpg,gif',
+//             ]);
+//         if ($validator->fails()) {
+//             return response()->json($validator->messages(), 400);
+//         }
+//         $otpCode = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
 
-  $image=$request->file('image')->store('userimages','public');
+//   $image=$request->file('image')->store('userimages','public');
 
-            DB::beginTransaction();
-            $data = [
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'phone_no'=>$request->phone_no,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'image'=>$image,
-                'otp'=>$otpCode,
-                'role'=>"Admin",
-                'status'=>"inactive",
-            ];
-            // $token=$data->createToken($request->email)->plainTextToken;
-            try {
-                $users = User::create($data);
-                Mail::to($users->email)->send(new OtpMail($otpCode));
+//             DB::beginTransaction();
+//             $data = [
+//                 'first_name' => $request->first_name,
+//                 'last_name' => $request->last_name,
+//                 'phone_no'=>$request->phone_no,
+//                 'email' => $request->email,
+//                 'password' => Hash::make($request->password),
+//                 'image'=>$image,
+//                 'otp'=>$otpCode,
+//                 'role'=>"Admin",
+//                 'status'=>"inactive",
+//             ];
+//             // $token=$data->createToken($request->email)->plainTextToken;
+//             try {
+//                 $users = User::create($data);
+//                 Mail::to($users->email)->send(new OtpMail($otpCode));
 
-                DB::commit();
-            }
-             catch (\Throwable $e) {
-                DB::rollback();
-                echo $e->getMessage();
-                $users = null;
-            }
-            if ($users != null) {
-                return response()->json(
-                    [
-                        'success' => true,
-                        'message' => 'An otp code sent to your email please check',
-                    ],200);
-            } else {
-                return response()->json(
-                    [
-                        'message' => 'Internal server error',
-                        'success' => false,
-                        'users' => null,
+//                 DB::commit();
+//             }
+//              catch (\Throwable $e) {
+//                 DB::rollback();
+//                 echo $e->getMessage();
+//                 $users = null;
+//             }
+//             if ($users != null) {
+//                 return response()->json(
+//                     [
+//                         'success' => true,
+//                         'message' => 'An otp code sent to your email please check',
+//                     ],200);
+//             } else {
+//                 return response()->json(
+//                     [
+//                         'message' => 'Internal server error',
+//                         'success' => false,
+//                         'users' => null,
 
-                    ],
-                    500
-                );
-            }
+//                     ],
+//                     500
+//                 );
+//             }
 
-    }
+//     }
     public function login(Request $request){
         $validator=Validator::make($request->all(),[
             'email'=>'required|email|exists:users,email',

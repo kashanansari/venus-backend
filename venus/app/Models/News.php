@@ -19,7 +19,8 @@ class News extends Model
         'image',
         'date',
         'time',
-        'status'
+        'status',
+        'total_views'
 
     ];
     public function scopeActive($query)

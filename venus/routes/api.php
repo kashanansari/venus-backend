@@ -32,6 +32,7 @@ Route::post('/create_investment',[usercontroller::class,'create_investment'])->n
 Route::post('/connect_wallet',[usercontroller::class,'connect_wallet'])->name('connect_wallet');
 Route::get('/get_amount_for_withdarwl/{property_id}',[usercontroller::class,'get_amount_for_withdarwl'])->name('get_amount_for_withdarwl');
 Route::post('/withdraw',[usercontroller::class,'withdraw'])->name('withdraw');
+Route::post('/view_on_news',[usercontroller::class,'view_on_news'])->name('view_on_news');
 
 });
 //builder
@@ -62,10 +63,10 @@ Route::post('/update_news',[admincontroller::class,'update_news'])->name('update
 Route::delete('/delete_news/{news_id}',[admincontroller::class,'delete_news'])->name('delete_news');
 // Route::post('/create_investment',[admincontroller::class,'create_investment'])->name('create_investment');
 
-Route::post('/signup',[admincontroller::class,'signup'])->name('signup');
+// Route::post('/signup',[admincontroller::class,'signup'])->name('signup');
 // Route::post('/login',[admincontroller::class,'login'])->name('login');
-Route::post('/verifyotp',[admincontroller::class,'verifyotp'])->name('verifyotp');
-Route::post('/resetpassword',[admincontroller::class,'resetpassword'])->name('resetpassword');
+// Route::post('/verifyotp',[admincontroller::class,'verifyotp'])->name('verifyotp');
+// Route::post('/resetpassword',[admincontroller::class,'resetpassword'])->name('resetpassword');
 Route::put('/change_password',[admincontroller::class,'change_password'])->name('change_password');
 Route::post('/logout',[admincontroller::class,'logout'])->name('logout');
 Route::get('/detailproperties',[admincontroller::class,'detailproperties'])->name('detailproperties');
@@ -78,5 +79,13 @@ Route::get('/get_user_kyc',[admincontroller::class,'get_user_kyc'])->name('get_u
 Route::get('time',[usercontroller::class,'time'])->name('time');
 Route::get('hash_password',[admincontroller::class,'hash_password'])->name('hash_password');
 
-//Admin authentication
+//Admin,Builder,User authentication
 Route::post('/login',[admincontroller::class,'login'])->name('login');
+Route::post('/userlogin',[usercontroller::class,'login'])->name('login');
+Route::post('/builderlogin',[buildercontroller::class,'login'])->name('login');
+Route::post('/signup',[usercontroller::class,'signup'])->name('signup');
+Route::post('/signup',[buildercontroller::class,'signup'])->name('signup');
+Route::post('/verifyotp',[usercontroller::class,'verifyotp'])->name('verifyotp');
+Route::post('/verifyotp',[buildercontroller::class,'verifyotp'])->name('verifyotp');
+Route::post('/resetpassword',[usercontroller::class,'resetpassword'])->name('resetpassword');
+Route::post('/resetpassword',[buildercontroller::class,'resetpassword'])->name('resetpassword');
