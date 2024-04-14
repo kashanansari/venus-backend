@@ -48,7 +48,7 @@ use App\Mail\OtpMail;
 class usercontroller extends Controller
 {
     //
-    public function signup(Request $request){
+    public function usersignup(Request $request){
         $validator = Validator::make(
             $request->all(),
             [
@@ -110,7 +110,7 @@ class usercontroller extends Controller
             }
 
     }
-    public function login(Request $request){
+    public function userlogin(Request $request){
         $validator=Validator::make($request->all(),[
             'email'=>'required|email|exists:users,email',
             'password'=>'required'

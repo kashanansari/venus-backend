@@ -31,12 +31,13 @@ use  App\DateTimehelper\formatTime;
 use App\Models\Dividend;
 use App\Models\Investment;
 use App\Models\News;
-use App\Models\Poperty;
+use App\Models\Property;
 use App\Models\Shares;
 use App\Models\Transfer;
 use App\Models\User_kyc;
 use App\Models\User;
 use App\Models\Votes;
+use App\Models\UserVotes;
 use App\Models\Withdraw;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -44,7 +45,7 @@ use App\Mail\OtpMail;
 class buildercontroller extends Controller
 {
     //
-    public function signup(Request $request){
+    public function buildersignup(Request $request){
         $validator = Validator::make(
             $request->all(),
             [
@@ -106,7 +107,7 @@ class buildercontroller extends Controller
             }
 
     }
-    public function login(Request $request){
+    public function builderlogin(Request $request){
         $validator=Validator::make($request->all(),[
             'email'=>'required|email|exists:users,email',
             'password'=>'required'
@@ -293,4 +294,134 @@ public function kyc_reject(Request $request){
        }
 }
 
+public function dividend(Request $request){
+    $validator = Validator::make($request->all(), [
+        'property_id' => 'required|exists:properties,id'
+    ]);
+
+    if($validator->fails()){
+        return response()->json([
+            'success' => false,
+            'message' => $validator->errors() 
+        ], 402); // Change status code to 400 for bad request     
+    }
+ $exists=Dividend::where('property_id',$request->property_id)
+ ->first();
+ if($exists){
+    return response()->json([
+        'success' => false,
+        'message' =>'Dividend amouunt already distributed with the investors' 
+    ], 400);
+ }
+    $dividend = Property::where('id', $request->property_id)
+        ->select('dividend')
+        ->exists();
+        if($dividend){
+
+        }
+
+    if(!$dividend) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Property not found' 
+        ], 404); // Change status code to 404 for not found
+    }
+
+    // Retrieve investments and their respective users
+    $investments = Investment::where('property_id', $request->property_id)
+        ->join('users', 'investments.user_id', '=', 'users.id')
+        ->select('users.id', 'users.email', 'users.wallet_address', 'investments.invested_amount', 'investments.invested_date')
+        ->get();
+
+    // Calculate total investment
+    $total_investment = $investments->sum('invested_amount');
+
+    // Calculate dividend amount per invested amount percentage
+    $dividend_per_percentage = $dividend->dividend / $total_investment;
+
+    // Calculate dividend amount for each investment
+    foreach ($investments as $investment) {
+        $investment->dividend_amount = $investment->invested_amount * $dividend_per_percentage;
+        Dividend::create([
+            'user_id'=>$investment->id,
+            'property_id'=>$request->property_id,
+            'amount'=>$investment->dividend_amount,
+            'date'=>formatDate(),
+            'time'=>formatTime(),
+            ]);
+    }
+   
+
+
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'dividend' => $dividend->dividend,
+            'investments' => $investments,
+            'total_investment' => $total_investment,
+            
+        ]
+    ], 200);
 }
+public function profile(Request $request){
+    $auth = Auth::user();
+    if($auth){
+        $user = User::where('id', $auth->id)
+                   ->select('image', 'first_name', 'last_name', 'email')
+                   ->first();
+        $property = Property::where('user_id', $auth->id)
+                            ->get();
+        $propertyWithVotes = [];
+
+        foreach($property as $propertyItem){
+            $votes = Votes::where('property_id', $propertyItem->id)
+                          ->get();
+
+            // Count occurrences of each vote in UserVotes
+            $voteCounts = [];
+            $totalyescounts=[];
+            $totalnocounts=[];
+            foreach ($votes as $vote) {
+                $voteId = $vote->id;
+                $count = UserVotes::where('vote_id', $voteId)->count();
+                $yescount = UserVotes::where('vote_id', $voteId)
+                ->where('vote_choice','YES')
+                ->count();
+                $nocount = UserVotes::where('vote_id', $voteId)
+                ->where('vote_choice','NO')
+                ->count();           
+                     $voteCounts = $count;
+                $totalyescounts=$yescount;
+                $totalnocounts=$nocount;
+            }
+
+            $propertyItem->votes_count = $voteCounts;
+            $propertyItem->yes_count = $totalyescounts;
+            $propertyItem->no_count = $totalnocounts;
+            $propertyWithVotes[] = $propertyItem;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data found successfully',
+            'data' => $user,
+            'properties' => $propertyWithVotes
+        ], 200);
+    }
+}
+
+                   
+                            
+                        
+                        // return response()->json([
+                        //     'success' => true,
+                        //     'message' => 'Data found successfully',
+                        //     'data'=>$user,
+                            
+
+                        // ], 200);
+
+
+    }
+ 
+

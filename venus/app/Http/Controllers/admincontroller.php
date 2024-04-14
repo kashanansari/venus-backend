@@ -110,7 +110,7 @@ class admincontroller extends Controller
 //             }
 
 //     }
-    public function login(Request $request){
+    public function adminlogin(Request $request){
         $validator=Validator::make($request->all(),[
             'email'=>'required|email|exists:users,email',
             'password'=>'required'
@@ -904,12 +904,20 @@ public function propertyinvestmentdetails($property_id){
         ->get();
         return $investment;
     });
-    
+    if($property->isEmpty()){
+        return response()->json([
+            'success' => false,
+            'message' =>'Data not found',
+            'data'=>null
+        ], 400);    
+    }
+    else{
     return response()->json([
         'success' => true,
         'message' =>'Data found successfully',
         'data'=>$property
     ], 200);
+}
 }
 public function get_builder_kyc(Request $request){
     $data=Builder_kyc::orderBy('created_at','desc')
@@ -925,7 +933,7 @@ public function get_builder_kyc(Request $request){
                         'success' => false,
                         'message' =>'No data found',
                         'data'=>null
-                    ], 400);
+                       ], 400);
                    }
     return response()->json([
         'success' => true,
