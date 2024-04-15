@@ -34,7 +34,7 @@ class Property extends Model
         'annual_recurring_revenue',
         'dividend',
         'declaration',
-        'buider_wallet_address',
+        'builder_wallet_address',
         'min_amount',
         'max_amount',
         'start_date',

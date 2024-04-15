@@ -967,5 +967,17 @@ public function hash_password(){
     
     return $pass;
 }
+public function popular_news(Request $request){
+   $news=News::orderBy('total_views','desc')
+        ->take(5)  
+        ->get();
+        if($news){
+            return response()->json([
+                'success' => true,
+                'message' =>'Data found successfully',
+                'data'=>$news
+            ], 200);
+        }
+}
 
 }

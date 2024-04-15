@@ -40,6 +40,7 @@
 
     Route::post('create_builder_kyc',[buildercontroller::class,'create_builder_kyc'])->name('create_builder_kyc');
     Route::get('profile',[buildercontroller::class,'profile'])->name('profile');
+    Route::post('dividend',[buildercontroller::class,'dividend'])->name('dividend');
 
     // Route::get('dividend',[buildercontroller::class,'dividend'])->name('dividend');
 });
@@ -94,4 +95,4 @@
     // Route::post('/verifyotp',[buildercontroller::class,'verifyotp'])->name('verifyotp');
     // Route::post('/resetpassword',[usercontroller::class,'resetpassword'])->name('resetpassword');
     Route::post('/resetpassword',[buildercontroller::class,'resetpassword'])->name('resetpassword');
-    Route::post('dividend',[buildercontroller::class,'dividend'])->name('dividend');
+    Route::get('/popular_news',[admincontroller::class,'popular_news'])->name('popular_news');

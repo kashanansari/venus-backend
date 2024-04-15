@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Dividend extends Model
+class Builder_dividend extends Model
 {
     use HasFactory;
-    protected $table="dividends";
+    protected $tbale='builder_dividends';
     protected $fillable=[
-    'user_id',
+    'builder_id',
     'property_id',
     'amount',
     'date',
